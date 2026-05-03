@@ -1,5 +1,8 @@
 import { defineConfig } from "prisma/config";
-import "dotenv/config";
+
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 export default defineConfig({
   datasource: {
