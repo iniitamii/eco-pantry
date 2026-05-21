@@ -59,6 +59,7 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [filter, setFilter]           = useState<Severity | "all">("all");
   const [deletingId, setDeletingId]   = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen]   = useState(false); // Added for hamburger menu
   const [, startTransition]           = useTransition();
   const router = useRouter();
 
@@ -103,29 +104,32 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
+        {/* Updated Navbar with Hamburger Menu */}
+        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40 relative">
           <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+            {/* Left Side: Logo */}
             <div className="flex items-center gap-2">
               <span className="text-xl">🌿</span>
               <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Desktop Navigation (Hidden on small screens) */}
+            <div className="hidden sm:flex items-center gap-4">
               <button
                 onClick={() => router.push("/meal-plan")}
-                className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors hidden sm:block"
+                className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors"
               >
                 ✨ Meal Planner
               </button>
               <button
                 onClick={() => router.push("/donations")}
-                className="text-xs text-stone-500 hover:text-stone-700 transition-colors hidden sm:block"
+                className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
               >
                 🤝 Donations
               </button>
               <div className="flex items-center gap-2">
                 {userImage && <img src={userImage} alt={userName} className="w-7 h-7 rounded-full object-cover" />}
-                <span className="text-sm text-stone-600 hidden sm:block">{userName}</span>
+                <span className="text-sm text-stone-600">{userName}</span>
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
@@ -134,7 +138,63 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
                 Sign out
               </button>
             </div>
+
+            {/* Mobile Navigation: Hamburger Button (Visible only on small screens) */}
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="sm:hidden p-2 text-stone-400 hover:text-stone-600 focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                // Close (X) Icon
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                // Hamburger Icon
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              )}
+            </button>
           </div>
+
+          {/* Mobile Dropdown Menu */}
+          {isMenuOpen && (
+            <div className="absolute top-full left-0 w-full bg-white/95 backdrop-blur border-b border-stone-100 shadow-sm z-50 sm:hidden">
+              <ul className="flex flex-col p-4 space-y-4">
+                <li>
+                  <button 
+                    onClick={() => { router.push("/meal-plan"); setIsMenuOpen(false); }}
+                    className="block text-emerald-700 font-medium hover:text-emerald-900 transition-colors"
+                  >
+                    ✨ Meal Planner
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => { router.push("/donations"); setIsMenuOpen(false); }}
+                    className="block text-stone-600 hover:text-stone-800 transition-colors"
+                  >
+                    🤝 Donations
+                  </button>
+                </li>
+                <hr className="border-stone-100" />
+                <li>
+                  <div className="flex items-center gap-2 mb-4">
+                    {userImage && <img src={userImage} alt={userName} className="w-6 h-6 rounded-full object-cover" />}
+                    <span className="text-sm text-stone-600">{userName}</span>
+                  </div>
+                  <button 
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="block w-full text-left text-sm text-rose-500 hover:text-rose-700 transition-colors font-medium"
+                  >
+                    Sign out
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
         </nav>
 
         <div className="max-w-5xl mx-auto px-4 py-8">
