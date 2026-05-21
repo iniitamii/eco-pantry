@@ -1,8 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // ─── Create a donation listing ────────────────────────────────────────────────
@@ -15,7 +14,7 @@ export async function createDonation(
   foodItemId: string,
   message?: string
 ): Promise<CreateDonationResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, error: "Unauthorised" };
   const userId = (session.user as any).id as string;
 
@@ -55,7 +54,7 @@ export type ClaimDonationResult =
   | { success: false; error: string };
 
 export async function claimDonation(listingId: string): Promise<ClaimDonationResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, error: "Unauthorised" };
   const userId = (session.user as any).id as string;
 
@@ -88,7 +87,7 @@ export type RemoveDonationResult =
   | { success: false; error: string };
 
 export async function removeDonation(listingId: string): Promise<RemoveDonationResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, error: "Unauthorised" };
   const userId = (session.user as any).id as string;
 

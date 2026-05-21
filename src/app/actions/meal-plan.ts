@@ -1,8 +1,7 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { FoodItem } from "@prisma/client";
 
@@ -71,7 +70,7 @@ Respond ONLY with valid JSON matching this exact structure, no markdown, no extr
 }
 
 export async function generateMealPlan(): Promise<MealPlanResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, error: "Unauthorised" };
   const userId = (session.user as any).id as string;
 

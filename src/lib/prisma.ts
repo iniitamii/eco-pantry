@@ -4,15 +4,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
-  const url = new URL(process.env.DATABASE_URL!);
-  const adapter = new PrismaMariaDb({
-    host:            url.hostname,
-    port:            Number(url.port),
-    user:            url.username,
-    password:        url.password,
-    database:        url.pathname.slice(1),
-    connectionLimit: 5,
-  });
+  const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
   return new PrismaClient({ adapter });
 }
 

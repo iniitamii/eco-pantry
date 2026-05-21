@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getServerSession } from "next-auth";
 import { FoodCategory, type FoodItem } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
 const AddFoodItemSchema = z.object({
   name:       z.string().min(1, "Name is required").max(100).trim(),
@@ -27,7 +26,7 @@ export type DeleteFoodItemResult =
   | { success: false; error: string };
 
 export async function addFoodItem(formData: FormData): Promise<AddFoodItemResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, errors: "Unauthorised" };
   const userId = (session.user as any).id as string;
 
@@ -55,7 +54,7 @@ export async function addFoodItem(formData: FormData): Promise<AddFoodItemResult
 }
 
 export async function deleteFoodItem(itemId: string): Promise<DeleteFoodItemResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, error: "Unauthorised" };
   const userId = (session.user as any).id as string;
 
@@ -73,7 +72,7 @@ export async function editFoodItem(
   itemId: string,
   formData: FormData
 ): Promise<AddFoodItemResult> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) return { success: false, errors: "Unauthorised" };
   const userId = (session.user as any).id as string;
 
