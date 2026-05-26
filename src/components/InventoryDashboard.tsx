@@ -7,11 +7,15 @@ import type { FoodItem, FoodCategory } from "@prisma/client";
 import { deleteFoodItem } from "@/app/actions/food-items";
 import { AddFoodItemModal } from "./AddFoodItemModal";
 import { EditFoodItemModal } from "./EditFoodItemModal";
+import { NotificationBell } from "./NotificationBell";
+import type { Notification } from "@prisma/client";
 
 interface Props {
-  items: FoodItem[];
-  userName: string;
-  userImage: string | null;
+  items:         FoodItem[];
+  userName:      string;
+  userImage:     string | null;
+  unreadCount:   number;
+  notifications: Notification[];
 }
 
 function daysUntilExpiry(date: Date | string) {
@@ -53,7 +57,7 @@ function getGreeting() {
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
 }
 
-export function InventoryDashboard({ items: initial, userName, userImage }: Props) {
+export function InventoryDashboard({ items: initial, userName, userImage, unreadCount, notifications }: Props) {
   const [items, setItems]             = useState<FoodItem[]>(initial);
   const [showModal, setShowModal]     = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -113,31 +117,49 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
               <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
             </div>
 
-            {/* Desktop Navigation (Hidden on small screens) */}
-            <div className="hidden sm:flex items-center gap-4">
-              <button
-                onClick={() => router.push("/meal-plan")}
-                className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors"
-              >
-                ✨ Meal Planner
-              </button>
-              <button
-                onClick={() => router.push("/donations")}
-                className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
-              >
-                🤝 Donations
-              </button>
-              <div className="flex items-center gap-2">
-                {userImage && <img src={userImage} alt={userName} className="w-7 h-7 rounded-full object-cover" />}
-                <span className="text-sm text-stone-600">{userName}</span>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
+        {/* Desktop Navigation (Hidden on small screens) */}
+        <div className="hidden sm:flex items-center gap-4">
+          <button
+            onClick={() => router.push("/meal-plan")}
+            className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors"
+          >
+            ✨ Meal Planner
+          </button>
+          <button
+            onClick={() => router.push("/donations")}
+            className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
+          >
+            🤝 Donations
+          </button>
+          <button
+            onClick={() => router.push("/analytics")}
+            className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
+          >
+            📊 My Impact
+          </button>
+
+          {/* 👇 Add the Notification Bell right here! */}
+          <NotificationBell unreadCount={unreadCount} notifications={notifications} />
+
+          <div className="flex items-center gap-2 border-l border-stone-200 pl-4 ml-2">
+            {userImage && <img src={userImage} alt={userName} className="w-7 h-7 rounded-full object-cover" />}
+            <span className="text-sm text-stone-600">{userName}</span>
+          </div>
+          
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-xs text-stone-400 hover:text-stone-600 transition-colors ml-2"
+          >
+            Sign out
+          </button>
+          <button
+            onClick={() => router.push("/settings")}
+            className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+          >
+            ⚙️ Settings
+          </button>
+        </div>
+        
 
             {/* Mobile Navigation: Hamburger Button (Visible only on small screens) */}
             <button 
@@ -179,7 +201,16 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
                     🤝 Donations
                   </button>
                 </li>
+                <li>
+                  <button
+                    onClick={() => { router.push("/analytics"); setIsMenuOpen(false); }}
+                    className="block text-stone-600 hover:text-stone-800 transition-colors"
+                  >
+                    📊 My Impact
+                  </button>
+                </li>
                 <hr className="border-stone-100" />
+                <NotificationBell unreadCount={unreadCount} notifications={notifications} />
                 <li>
                   <div className="flex items-center gap-2 mb-4">
                     {userImage && <img src={userImage} alt={userName} className="w-6 h-6 rounded-full object-cover" />}
@@ -191,6 +222,14 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
                   >
                     Sign out
                   </button>
+                  <li>
+                <button
+                    onClick={() => { router.push("/settings"); setIsMenuOpen(false); }}
+                    className="block text-sm text-stone-500 hover:text-stone-700 transition-colors"
+                  >
+                  ⚙️ Settings
+                </button>
+                  </li>
                 </li>
               </ul>
             </div>

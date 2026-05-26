@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { editFoodItem } from "@/app/actions/food-items";
-import type { FoodItem, FoodCategory } from "@prisma/client";
+import type { FoodItem, FoodCategory, StorageLocation, FoodItemStatus } from "@prisma/client";
 
 interface Props {
   item:      FoodItem;
@@ -23,6 +23,22 @@ const CATEGORIES: { value: FoodCategory; label: string; icon: string }[] = [
   { value: "SNACKS",       label: "Snacks",     icon: "🍿" },
   { value: "BAKERY",       label: "Bakery",     icon: "🍞" },
   { value: "OTHER",        label: "Other",      icon: "📦" },
+];
+
+const STORAGE_LOCATIONS: { value: string; label: string; icon: string }[] = [
+  { value: "FRIDGE",   label: "Fridge",   icon: "🧊" },
+  { value: "FREEZER",  label: "Freezer",  icon: "❄️" },
+  { value: "PANTRY",   label: "Pantry",   icon: "🗄️" },
+  { value: "CUPBOARD", label: "Cupboard", icon: "🚪" },
+  { value: "OTHER",    label: "Other",    icon: "📦" },
+];
+
+const STATUSES: { value: string; label: string }[] = [
+  { value: "AVAILABLE", label: "Available" },
+  { value: "PLANNED",   label: "Planned for meal" },
+  { value: "DONATED",   label: "Donated" },
+  { value: "USED",      label: "Used" },
+  { value: "EXPIRED",   label: "Expired" },
 ];
 
 const UNITS = ["pcs", "L", "ml", "kg", "g", "oz", "lb", "cup", "pack", "bottle", "can"];
@@ -118,6 +134,28 @@ export function EditFoodItemModal({ item, onClose, onSuccess }: Props) {
               ))}
             </select>
             {fieldError("category") && <p className="text-xs text-rose-500 mt-1">{fieldError("category")}</p>}
+          </div>
+
+          {/* Storage location */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">Storage location</label>
+            <select name="storageLocation" defaultValue={item.storageLocation}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+              {STORAGE_LOCATIONS.map(({ value, label, icon }) => (
+                <option key={value} value={value}>{icon} {label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">Status</label>
+            <select name="status" defaultValue={item.status}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+              {STATUSES.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Expiry Date */}

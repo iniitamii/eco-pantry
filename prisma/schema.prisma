@@ -61,19 +61,25 @@ model User {
 
   foodItems        FoodItem[]
   donationListings DonationListing[]
+  donationClaims   DonationClaim[]    // new
+  analyticsLogs    FoodAnalyticsLog[]  // new
+  notifications    Notification[]      // new
+  settings       UserSettings?   // new
+  mealPlans      MealPlan[]
 
   @@map("users")
 }
-
 model FoodItem {
-  id         String       @id @default(cuid())
-  name       String
-  quantity   Float
-  unit       String       @default("pcs")
-  category   FoodCategory
-  expiryDate DateTime
-  isDonated  Boolean      @default(false)
-  notes      String?      @db.Text
+  id              String          @id @default(cuid())
+  name            String
+  quantity        Float
+  unit            String          @default("pcs")
+  category        FoodCategory
+  expiryDate      DateTime
+  storageLocation StorageLocation @default(PANTRY)   // new
+  status          FoodItemStatus  @default(AVAILABLE) // new
+  isDonated       Boolean         @default(false)
+  notes           String?         @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,9 +88,11 @@ model FoodItem {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   donationListing DonationListing?
+  analyticsLogs   FoodAnalyticsLog[]  // new
 
   @@index([userId])
   @@index([expiryDate])
+  @@index([status])          // new
   @@map("food_items")
 }
 
@@ -103,11 +111,29 @@ enum FoodCategory {
   OTHER
 }
 
+enum StorageLocation {
+  FRIDGE
+  FREEZER
+  PANTRY
+  CUPBOARD
+  OTHER
+}
+
+enum FoodItemStatus {
+  AVAILABLE
+  PLANNED
+  DONATED
+  USED
+  EXPIRED
+}
+
 model DonationListing {
-  id          String    @id @default(cuid())
-  message     String?   @db.Text
-  isAvailable Boolean   @default(true)
-  claimedAt   DateTime?
+  id             String    @id @default(cuid())
+  message        String?   @db.Text
+  isAvailable    Boolean   @default(true)
+  pickupLocation String?                    // new
+  pickupNotes    String?   @db.Text         // new
+  claimedAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -118,7 +144,139 @@ model DonationListing {
   foodItemId String   @unique
   foodItem   FoodItem @relation(fields: [foodItemId], references: [id], onDelete: Cascade)
 
+  claims DonationClaim[]   // new
+
   @@index([userId])
   @@index([isAvailable])
   @@map("donation_listings")
+}
+
+enum ClaimStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model DonationClaim {
+  id      String      @id @default(cuid())
+  status  ClaimStatus @default(PENDING)
+  message String?     @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  claimerId String
+  claimer   User   @relation(fields: [claimerId], references: [id], onDelete: Cascade)
+
+  listingId String
+  listing   DonationListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([claimerId])
+  @@index([listingId])
+  @@index([status])
+  @@map("donation_claims")
+}
+
+enum FoodActionType {
+  ITEM_ADDED
+  ITEM_USED
+  ITEM_DONATED
+  ITEM_EXPIRED
+  DONATION_CLAIMED
+}
+
+model FoodAnalyticsLog {
+  id         String        @id @default(cuid())
+  actionType FoodActionType
+  quantity   Float
+  unit       String
+  category   FoodCategory
+  loggedAt   DateTime      @default(now())
+
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  foodItemId String?
+  foodItem   FoodItem?     @relation(fields: [foodItemId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([loggedAt])
+  @@index([actionType])
+  @@map("food_analytics_logs")
+}
+
+enum NotificationType {
+  EXPIRY_ALERT
+  DONATION_CLAIMED
+  CLAIM_CONFIRMED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  isRead    Boolean          @default(false)
+  refId     String?          // listingId or foodItemId depending on type
+
+  createdAt DateTime         @default(now())
+
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  listingsPublic        Boolean @default(true)
+  notifyExpiryAlerts    Boolean @default(true)
+  notifyDonationClaimed Boolean @default(true)
+  notifyClaimConfirmed  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model MealPlan {
+  id                String         @id @default(cuid())
+  generatedAt       DateTime       @default(now())
+  wasteReductionTip String         @db.Text
+  shoppingList      Json
+  
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  suggestions MealSuggestion[]
+
+  @@index([userId])
+  @@index([generatedAt])
+  @@map("meal_plans")
+}
+
+model MealSuggestion {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @db.Text
+  ingredients Json
+  servings    Int
+  prepMinutes Int
+  prioritises Json
+  isCooked    Boolean  @default(false)
+  cookedAt    DateTime?
+
+  mealPlanId String
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+
+  @@index([mealPlanId])
+  @@map("meal_suggestions")
 }
