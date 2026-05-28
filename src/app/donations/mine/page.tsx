@@ -14,10 +14,15 @@ export default async function MyDonationsPage() {
   const listings = await prisma.donationListing.findMany({
     where:   { userId },
     orderBy: { createdAt: "desc" },
-    include: { foodItem: true },
+    include: {
+      foodItem: true,
+      claims: {
+        include: { claimer: { select: { id: true, name: true, image: true } } },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
-  // Fetch non-donated items so user can create new listings
   const availableItems = await prisma.foodItem.findMany({
     where:   { userId, isDonated: false },
     orderBy: { expiryDate: "asc" },

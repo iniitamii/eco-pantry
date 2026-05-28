@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { Navbar } from "./Navbar";
 import type { FoodItem, FoodCategory } from "@prisma/client";
 import { deleteFoodItem } from "@/app/actions/food-items";
 import { AddFoodItemModal } from "./AddFoodItemModal";
 import { EditFoodItemModal } from "./EditFoodItemModal";
+import { FoodItemDetailModal } from "./FoodItemDetailModal";
+import { NotificationBell } from "./NotificationBell";
+import type { Notification } from "@prisma/client";
 
 interface Props {
-  items: FoodItem[];
-  userName: string;
-  userImage: string | null;
+  items:         FoodItem[];
+  userName:      string;
+  userImage:     string | null;
+  unreadCount:   number;
+  notifications: Notification[];
 }
 
 function daysUntilExpiry(date: Date | string) {
@@ -53,14 +57,14 @@ function getGreeting() {
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
 }
 
-export function InventoryDashboard({ items: initial, userName, userImage }: Props) {
+export function InventoryDashboard({ items: initial, userName, userImage, unreadCount, notifications }: Props) {
   const [items, setItems]             = useState<FoodItem[]>(initial);
   const [showModal, setShowModal]     = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [detailItem, setDetailItem]   = useState<FoodItem | null>(null);
   const [filter, setFilter]           = useState<Severity | "all">("all");
   const [deletingId, setDeletingId]   = useState<string | null>(null);
   const [, startTransition]           = useTransition();
-  const router = useRouter();
 
   const stats = {
     total:    items.length,
@@ -103,39 +107,7 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌿</span>
-              <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push("/meal-plan")}
-                className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors hidden sm:block"
-              >
-                ✨ Meal Planner
-              </button>
-              <button
-                onClick={() => router.push("/donations")}
-                className="text-xs text-stone-500 hover:text-stone-700 transition-colors hidden sm:block"
-              >
-                🤝 Donations
-              </button>
-              <div className="flex items-center gap-2">
-                {userImage && <img src={userImage} alt={userName} className="w-7 h-7 rounded-full object-cover" />}
-                <span className="text-sm text-stone-600 hidden sm:block">{userName}</span>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </nav>
+        <Navbar notifications={notifications} unreadCount={unreadCount} />
 
         <div className="max-w-5xl mx-auto px-4 py-8">
 
@@ -212,7 +184,8 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
                 return (
                   <li
                     key={item.id}
-                    className={`rounded-2xl border p-5 transition-all duration-200 ${style.card} ${deleting ? "opacity-40 scale-95" : "hover:shadow-md"}`}
+                    onClick={() => setDetailItem(item)}
+                    className={`rounded-2xl border p-5 transition-all duration-200 cursor-pointer ${style.card} ${deleting ? "opacity-40 scale-95" : "hover:shadow-md hover:-translate-y-0.5"}`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -249,21 +222,38 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
+                    {/* Donation badge */}
+                    {item.status === "PLANNED" && (
+                      <div className="mb-3 flex items-center gap-1.5 text-xs text-purple-600 bg-purple-50 border border-purple-100 rounded-lg px-2.5 py-1.5">
+                        <span>🤝</span>
+                        <span className="font-medium">Listed for donation</span>
+                      </div>
+                    )}
+
+                    {/* Actions — stop propagation so clicks don't open detail */}
+                    <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => setEditingItem(item)}
-                        className="text-xs text-stone-400 hover:text-emerald-600 font-medium transition-colors"
+                        disabled={item.status === "PLANNED"}
+                        className="text-xs text-stone-400 hover:text-emerald-600 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        disabled={deleting}
-                        className="text-xs text-stone-400 hover:text-rose-500 font-medium transition-colors disabled:cursor-not-allowed"
+                        disabled={deleting || item.status === "PLANNED"}
+                        className="text-xs text-stone-400 hover:text-rose-500 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {deleting ? "Removing…" : "Remove"}
                       </button>
+                      {item.status === "PLANNED" && (
+                        <a
+                          href="/donations/mine"
+                          className="text-xs text-purple-500 hover:text-purple-700 font-medium transition-colors"
+                        >
+                          Manage →
+                        </a>
+                      )}
                     </div>
                   </li>
                 );
@@ -272,7 +262,7 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
           )}
         </div>
       </div>
-
+        
       {/* Modals */}
       {showModal && (
         <AddFoodItemModal
@@ -285,6 +275,14 @@ export function InventoryDashboard({ items: initial, userName, userImage }: Prop
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onSuccess={handleItemUpdated}
+        />
+      )}
+      {detailItem && (
+        <FoodItemDetailModal
+          item={detailItem}
+          onClose={() => setDetailItem(null)}
+          onEdit={(item) => { setDetailItem(null); setEditingItem(item); }}
+          onDelete={(id) => { setDetailItem(null); handleDelete(id); }}
         />
       )}
     </>
