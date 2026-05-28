@@ -11,9 +11,13 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-
   const userId = (session.user as any).id as string;
-
+  const dbUser = await prisma.user.findUnique({
+    where:  { id: userId },
+    select: { twoFactorEnabled: true, twoFactorVerifiedAt: true },
+  });
+  const needsVerify = dbUser?.twoFactorEnabled && !dbUser?.twoFactorVerifiedAt;
+  if (needsVerify) redirect(`/login/verify?userId=${userId}`);
   await checkExpiryAndNotify(userId);
 
   const [items, notifications] = await Promise.all([

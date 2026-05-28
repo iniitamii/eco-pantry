@@ -56,6 +56,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  twoFactorEnabled    Boolean   @default(false)
+  twoFactorSecret     String?
+  twoFactorVerifiedAt DateTime?
+
   accounts Account[]
   sessions Session[]
 
@@ -66,6 +70,7 @@ model User {
   notifications    Notification[]      // new
   settings       UserSettings?   // new
   mealPlans      MealPlan[]
+  backupCodes    TwoFactorBackupCode[]
 
   @@map("users")
 }
@@ -280,4 +285,17 @@ model MealSuggestion {
 
   @@index([mealPlanId])
   @@map("meal_suggestions")
+}
+
+model TwoFactorBackupCode {
+  id        String    @id @default(cuid())
+  code      String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("two_factor_backup_codes")
 }

@@ -16,3 +16,6 @@ export const config = {
     "/settings/:path*",
   ],
 };
+
+// Note: /login/verify is intentionally NOT in the matcher
+// so unauthenticated users with twoFactorPending can access it

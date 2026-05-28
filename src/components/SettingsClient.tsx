@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { Navbar } from "./Navbar";
 import { saveSettings } from "@/app/actions/settings";
+import { getTwoFactorStatus } from "@/app/actions/two-factor";
+import { TwoFactorSetup } from "./TwoFactorSetup";
 
 interface Settings {
   listingsPublic:        boolean;
@@ -12,8 +14,14 @@ interface Settings {
   expiryAlertDays:       number;
 }
 
+interface TwoFactorStatus {
+  enabled:              boolean;
+  backupCodesRemaining: number;
+}
+
 interface Props {
-  settings:  Settings;
+  settings:    Settings;
+  twoFactor:   TwoFactorStatus;
 }
 
 function Toggle({
@@ -47,11 +55,17 @@ function Toggle({
   );
 }
 
-export function SettingsClient({ settings: initial }: Props) {
+export function SettingsClient({ settings: initial, twoFactor: initialTwoFactor }: Props) {
   const [settings, setSettings] = useState<Settings>(initial);
   const [saved, setSaved]       = useState(false);
   const [error, setError]       = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [twoFactor, setTwoFactor] = useState<TwoFactorStatus>(initialTwoFactor);
+
+  async function refreshTwoFactorStatus() {
+    const status = await getTwoFactorStatus();
+    setTwoFactor(status);
+  }
 
   function update(key: keyof Settings, value: boolean | number) {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -154,6 +168,18 @@ export function SettingsClient({ settings: initial }: Props) {
                 onChange={v => update("notifyClaimConfirmed", v)}
               />
             </div>
+        </div>
+
+          {/* Security section */}
+          <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 mb-6">
+            <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">
+              Security
+            </h2>
+            <TwoFactorSetup
+              enabled={twoFactor.enabled}
+              backupCodesRemaining={twoFactor.backupCodesRemaining}
+              onStatusChange={refreshTwoFactorStatus}
+            />
           </div>
 
           {/* Save button */}

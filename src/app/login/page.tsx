@@ -46,7 +46,14 @@ export default function LoginPage() {
         : result.error
       );
     } else {
-      router.push("/dashboard");
+      // Check if 2FA is required
+      const { getSession } = await import("next-auth/react");
+      const session = await getSession();
+      if ((session?.user as any)?.twoFactorPending) {
+        router.push(`/login/verify?userId=${(session?.user as any)?.id}`);
+      } else {
+        router.push("/dashboard");
+      }
     }
   }
 
