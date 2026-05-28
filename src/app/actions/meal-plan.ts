@@ -209,3 +209,28 @@ export async function markMealCooked(suggestionId: string): Promise<MarkCookedRe
     return { success: false, error: "Failed to mark meal as cooked." };
   }
 }
+
+export type DeleteMealPlanResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export async function deleteMealPlan(planId: string): Promise<DeleteMealPlanResult> {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Unauthorised" };
+  const userId = (session.user as any).id as string;
+
+  try {
+    const plan = await prisma.mealPlan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan)                  return { success: false, error: "Plan not found" };
+    if (plan.userId !== userId) return { success: false, error: "Unauthorised" };
+
+    await prisma.mealPlan.delete({ where: { id: planId } });
+    return { success: true };
+  } catch (error) {
+    console.error("[deleteMealPlan] error:", error);
+    return { success: false, error: "Failed to delete plan." };
+  }
+}

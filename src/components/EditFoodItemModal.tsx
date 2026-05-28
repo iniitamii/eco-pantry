@@ -150,12 +150,26 @@ export function EditFoodItemModal({ item, onClose, onSuccess }: Props) {
           {/* Status */}
           <div>
             <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">Status</label>
-            <select name="status" defaultValue={item.status}
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
-              {STATUSES.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+            {item.status === "PLANNED" || item.status === "DONATED" ? (
+              <>
+                <div className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-stone-50 text-stone-400 cursor-not-allowed">
+                  {item.status === "PLANNED" ? "🤝 Listed for donation — manage in Donations" : "✅ Donated"}
+                </div>
+                <input type="hidden" name="status" value={item.status} />
+                <p className="text-xs text-stone-400 mt-1">
+                  {item.status === "PLANNED"
+                    ? "To change this, remove the donation listing first."
+                    : "This item has been donated and cannot be edited."}
+                </p>
+              </>
+            ) : (
+              <select name="status" defaultValue={item.status}
+                className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                {STATUSES.filter(s => s.value !== "PLANNED" && s.value !== "DONATED").map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Expiry Date */}
@@ -180,7 +194,7 @@ export function EditFoodItemModal({ item, onClose, onSuccess }: Props) {
           </div>
 
           <button
-            type="submit" disabled={isPending}
+            type="submit" disabled={isPending || item.status === "DONATED"}
             className="w-full bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition-colors flex items-center justify-center gap-2"
           >
             {isPending ? (

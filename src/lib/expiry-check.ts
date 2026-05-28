@@ -5,7 +5,7 @@ import { FoodItem } from "@prisma/client";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MAX_NAMES_IN_NOTIFICATION = 3;
-const WARNING_DAYS = 3;  // "expiring soon" window
+const DEFAULT_WARNING_DAYS = 3;
 const CRITICAL_DAYS = 1; // "expiring today/tomorrow" window
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,9 +50,10 @@ export async function checkExpiryAndNotify(userId: string): Promise<void> {
     // Check user preference before any DB work
     const settings = await prisma.userSettings.findUnique({
       where:  { userId },
-      select: { notifyExpiryAlerts: true },
+      select: { notifyExpiryAlerts: true, expiryAlertDays: true },
     });
     if (settings && !settings.notifyExpiryAlerts) return;
+    const WARNING_DAYS = settings?.expiryAlertDays ?? DEFAULT_WARNING_DAYS;
 
     // One dedup check — if we already sent an EXPIRY_ALERT today, bail out early
     if (await wasAlreadyNotifiedToday(userId)) return;
@@ -101,7 +102,7 @@ export async function checkExpiryAndNotify(userId: string): Promise<void> {
       type:  "EXPIRY_ALERT",
       title,
       body,
-      refId: expiringItems[0].id, // deep-link to the most urgent item
+      foodItemId: expiringItems[0].id,
     });
   } catch (error) {
     console.error("[checkExpiryAndNotify]", error);

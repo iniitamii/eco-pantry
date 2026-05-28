@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { claimDonation } from "@/app/actions/donations";
+import { Navbar } from "./Navbar";
 import type { FoodItem, FoodCategory } from "@prisma/client";
 
 interface DonationListing {
@@ -32,15 +34,14 @@ function daysUntilExpiry(date: Date | string) {
 
 export function DonationsClient({ listings: initial, currentUserId }: Props) {
   const [listings, setListings]         = useState<DonationListing[]>(initial);
-  const [requestingId, setRequestingId] = useState<string | null>(null); // which card is expanded
+  const [requestingId, setRequestingId] = useState<string | null>(null);
   const [messages, setMessages]         = useState<Record<string, string>>({});
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [error, setError]               = useState<string | null>(null);
   const [, startTransition]             = useTransition();
-  const router = useRouter();
+  const router                          = useRouter();
 
   function handleRequestClick(listingId: string) {
-    // Toggle: clicking again collapses the form
     setRequestingId(prev => prev === listingId ? null : listingId);
     setError(null);
   }
@@ -51,7 +52,6 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
     startTransition(async () => {
       const result = await claimDonation(listingId, messages[listingId] || undefined);
       if (result.success) {
-        // Remove from list — they've already requested, no point showing it again
         setListings(prev => prev.filter(l => l.id !== listingId));
         setRequestingId(null);
       } else {
@@ -67,37 +67,28 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌿</span>
-              <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.push("/donations/mine")} className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors">
-                My Donations
-              </button>
-              <button onClick={() => router.push("/dashboard")} className="text-xs text-stone-500 hover:text-stone-700 transition-colors">
-                ← Pantry
-              </button>
-            </div>
-          </div>
-        </nav>
+        <Navbar />
 
         <div className="max-w-5xl mx-auto px-4 py-8">
 
-          {/* Header */}
-          <div className="mb-8">
-            <h1 style={{ fontFamily: "'Lora', serif" }} className="text-3xl sm:text-4xl text-stone-800">
-              🤝 Community Donations
-            </h1>
-            <p className="text-stone-500 mt-1.5 text-sm sm:text-base">
-              {listings.length > 0
-                ? `${listings.length} item${listings.length > 1 ? "s" : ""} available from your community.`
-                : "No donations available right now — check back later!"}
-            </p>
-          </div>
+          <div className="mb-8 flex items-start justify-between gap-4">
+            <div>
+              <h1 style={{ fontFamily: "'Lora', serif" }} className="text-3xl sm:text-4xl text-stone-800">
+                🤝 Community Donations
+              </h1>
+              <p className="text-stone-500 mt-1.5 text-sm sm:text-base">
+                {listings.length > 0
+                  ? `${listings.length} item${listings.length > 1 ? "s" : ""} available from your community.`
+                  : "No donations available right now — check back later!"}
+              </p>
+            </div>
+            <Link
+              href="/donations/mine"
+              className="shrink-0 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold rounded-xl shadow transition-colors"
+            >
+              + Donate Item
+            </Link>
+          </div>  
 
           {error && (
             <div className="mb-4 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3">
@@ -110,18 +101,19 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
               <p className="text-5xl mb-4">🌱</p>
               <p className="font-medium text-stone-500">No donations available yet</p>
               <p className="text-sm mt-1">Be the first to donate surplus food from your pantry!</p>
-              <button
-                onClick={() => router.push("/donations/mine")}
-                className="mt-4 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold rounded-xl transition-colors"
+              
+              <Link
+                href="/donations/mine"
+                className="mt-4 inline-block px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold rounded-xl transition-colors"
               >
                 Donate an item
-              </button>
+              </Link>
             </div>
           ) : (
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {listings.map(listing => {
-                const days        = daysUntilExpiry(listing.foodItem.expiryDate);
-                const isExpanded  = requestingId === listing.id;
+                const days         = daysUntilExpiry(listing.foodItem.expiryDate);
+                const isExpanded   = requestingId === listing.id;
                 const isSubmitting = submittingId === listing.id;
 
                 return (
@@ -129,7 +121,6 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
                     key={listing.id}
                     className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 hover:shadow-md transition-all"
                   >
-                    {/* Donor info */}
                     <div className="flex items-center gap-2 mb-3 pb-3 border-b border-stone-50">
                       {listing.user.image ? (
                         <img src={listing.user.image} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -143,7 +134,6 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
                       </span>
                     </div>
 
-                    {/* Item info */}
                     <div className="flex items-start gap-2.5 mb-3">
                       <span className="text-2xl shrink-0">{ICONS[listing.foodItem.category]}</span>
                       <div className="min-w-0">
@@ -154,7 +144,6 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
                       </div>
                     </div>
 
-                    {/* Expiry */}
                     <p className="text-xs text-stone-400 mb-2">
                       Expires: {new Date(listing.foodItem.expiryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       <span className={`ml-1 font-medium ${days < 0 ? "text-rose-500" : days <= 3 ? "text-orange-500" : "text-stone-400"}`}>
@@ -162,21 +151,16 @@ export function DonationsClient({ listings: initial, currentUserId }: Props) {
                       </span>
                     </p>
 
-                    {/* Donor message */}
                     {listing.message && (
                       <p className="text-xs text-stone-500 italic mb-2 bg-stone-50 rounded-lg px-3 py-2">
                         "{listing.message}"
                       </p>
                     )}
 
-                    {/* Pickup location */}
                     {listing.pickupLocation && (
-                      <p className="text-xs text-stone-400 mb-3">
-                        📍 {listing.pickupLocation}
-                      </p>
+                      <p className="text-xs text-stone-400 mb-3">📍 {listing.pickupLocation}</p>
                     )}
 
-                    {/* Request form (expanded) */}
                     {isExpanded ? (
                       <div className="mt-2 space-y-2">
                         <textarea

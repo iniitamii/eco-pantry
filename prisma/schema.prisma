@@ -133,7 +133,6 @@ model DonationListing {
   isAvailable    Boolean   @default(true)
   pickupLocation String?                    // new
   pickupNotes    String?   @db.Text         // new
-  claimedAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -218,8 +217,9 @@ model Notification {
   title     String
   body      String           @db.Text
   isRead    Boolean          @default(false)
-  refId     String?          // listingId or foodItemId depending on type
-
+  foodItemId  String?
+  listingId   String?
+  
   createdAt DateTime         @default(now())
 
   userId    String
@@ -238,6 +238,7 @@ model UserSettings {
 
   listingsPublic        Boolean @default(true)
   notifyExpiryAlerts    Boolean @default(true)
+  expiryAlertDays       Int     @default(3)
   notifyDonationClaimed Boolean @default(true)
   notifyClaimConfirmed  Boolean @default(true)
 

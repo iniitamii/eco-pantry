@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { Navbar } from "./Navbar";
 import type { FoodItem, FoodCategory } from "@prisma/client";
 import { deleteFoodItem } from "@/app/actions/food-items";
 import { AddFoodItemModal } from "./AddFoodItemModal";
 import { EditFoodItemModal } from "./EditFoodItemModal";
+import { FoodItemDetailModal } from "./FoodItemDetailModal";
 import { NotificationBell } from "./NotificationBell";
 import type { Notification } from "@prisma/client";
 
@@ -61,11 +61,10 @@ export function InventoryDashboard({ items: initial, userName, userImage, unread
   const [items, setItems]             = useState<FoodItem[]>(initial);
   const [showModal, setShowModal]     = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [detailItem, setDetailItem]   = useState<FoodItem | null>(null);
   const [filter, setFilter]           = useState<Severity | "all">("all");
   const [deletingId, setDeletingId]   = useState<string | null>(null);
-  const [isMenuOpen, setIsMenuOpen]   = useState(false); // Added for hamburger menu
   const [, startTransition]           = useTransition();
-  const router = useRouter();
 
   const stats = {
     total:    items.length,
@@ -108,133 +107,7 @@ export function InventoryDashboard({ items: initial, userName, userImage, unread
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Updated Navbar with Hamburger Menu */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40 relative">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            {/* Left Side: Logo */}
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌿</span>
-              <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
-            </div>
-
-        {/* Desktop Navigation (Hidden on small screens) */}
-        <div className="hidden sm:flex items-center gap-4">
-          <button
-            onClick={() => router.push("/meal-plan")}
-            className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors"
-          >
-            ✨ Meal Planner
-          </button>
-          <button
-            onClick={() => router.push("/donations")}
-            className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
-          >
-            🤝 Donations
-          </button>
-          <button
-            onClick={() => router.push("/analytics")}
-            className="text-xs text-stone-500 hover:text-stone-700 transition-colors"
-          >
-            📊 My Impact
-          </button>
-
-          {/* 👇 Add the Notification Bell right here! */}
-          <NotificationBell unreadCount={unreadCount} notifications={notifications} />
-
-          <div className="flex items-center gap-2 border-l border-stone-200 pl-4 ml-2">
-            {userImage && <img src={userImage} alt={userName} className="w-7 h-7 rounded-full object-cover" />}
-            <span className="text-sm text-stone-600">{userName}</span>
-          </div>
-          
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-xs text-stone-400 hover:text-stone-600 transition-colors ml-2"
-          >
-            Sign out
-          </button>
-          <button
-            onClick={() => router.push("/settings")}
-            className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-          >
-            ⚙️ Settings
-          </button>
-        </div>
-        
-
-            {/* Mobile Navigation: Hamburger Button (Visible only on small screens) */}
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="sm:hidden p-2 text-stone-400 hover:text-stone-600 focus:outline-none"
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? (
-                // Close (X) Icon
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                // Hamburger Icon
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Mobile Dropdown Menu */}
-          {isMenuOpen && (
-            <div className="absolute top-full left-0 w-full bg-white/95 backdrop-blur border-b border-stone-100 shadow-sm z-50 sm:hidden">
-              <ul className="flex flex-col p-4 space-y-4">
-                <li>
-                  <button 
-                    onClick={() => { router.push("/meal-plan"); setIsMenuOpen(false); }}
-                    className="block text-emerald-700 font-medium hover:text-emerald-900 transition-colors"
-                  >
-                    ✨ Meal Planner
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => { router.push("/donations"); setIsMenuOpen(false); }}
-                    className="block text-stone-600 hover:text-stone-800 transition-colors"
-                  >
-                    🤝 Donations
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => { router.push("/analytics"); setIsMenuOpen(false); }}
-                    className="block text-stone-600 hover:text-stone-800 transition-colors"
-                  >
-                    📊 My Impact
-                  </button>
-                </li>
-                <hr className="border-stone-100" />
-                <NotificationBell unreadCount={unreadCount} notifications={notifications} />
-                <li>
-                  <div className="flex items-center gap-2 mb-4">
-                    {userImage && <img src={userImage} alt={userName} className="w-6 h-6 rounded-full object-cover" />}
-                    <span className="text-sm text-stone-600">{userName}</span>
-                  </div>
-                  <button 
-                    onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="block w-full text-left text-sm text-rose-500 hover:text-rose-700 transition-colors font-medium"
-                  >
-                    Sign out
-                  </button>
-                  <li>
-                <button
-                    onClick={() => { router.push("/settings"); setIsMenuOpen(false); }}
-                    className="block text-sm text-stone-500 hover:text-stone-700 transition-colors"
-                  >
-                  ⚙️ Settings
-                </button>
-                  </li>
-                </li>
-              </ul>
-            </div>
-          )}
-        </nav>
+        <Navbar notifications={notifications} unreadCount={unreadCount} />
 
         <div className="max-w-5xl mx-auto px-4 py-8">
 
@@ -311,7 +184,8 @@ export function InventoryDashboard({ items: initial, userName, userImage, unread
                 return (
                   <li
                     key={item.id}
-                    className={`rounded-2xl border p-5 transition-all duration-200 ${style.card} ${deleting ? "opacity-40 scale-95" : "hover:shadow-md"}`}
+                    onClick={() => setDetailItem(item)}
+                    className={`rounded-2xl border p-5 transition-all duration-200 cursor-pointer ${style.card} ${deleting ? "opacity-40 scale-95" : "hover:shadow-md hover:-translate-y-0.5"}`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -348,21 +222,38 @@ export function InventoryDashboard({ items: initial, userName, userImage, unread
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-3">
+                    {/* Donation badge */}
+                    {item.status === "PLANNED" && (
+                      <div className="mb-3 flex items-center gap-1.5 text-xs text-purple-600 bg-purple-50 border border-purple-100 rounded-lg px-2.5 py-1.5">
+                        <span>🤝</span>
+                        <span className="font-medium">Listed for donation</span>
+                      </div>
+                    )}
+
+                    {/* Actions — stop propagation so clicks don't open detail */}
+                    <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => setEditingItem(item)}
-                        className="text-xs text-stone-400 hover:text-emerald-600 font-medium transition-colors"
+                        disabled={item.status === "PLANNED"}
+                        className="text-xs text-stone-400 hover:text-emerald-600 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        disabled={deleting}
-                        className="text-xs text-stone-400 hover:text-rose-500 font-medium transition-colors disabled:cursor-not-allowed"
+                        disabled={deleting || item.status === "PLANNED"}
+                        className="text-xs text-stone-400 hover:text-rose-500 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {deleting ? "Removing…" : "Remove"}
                       </button>
+                      {item.status === "PLANNED" && (
+                        <a
+                          href="/donations/mine"
+                          className="text-xs text-purple-500 hover:text-purple-700 font-medium transition-colors"
+                        >
+                          Manage →
+                        </a>
+                      )}
                     </div>
                   </li>
                 );
@@ -371,7 +262,7 @@ export function InventoryDashboard({ items: initial, userName, userImage, unread
           )}
         </div>
       </div>
-
+        
       {/* Modals */}
       {showModal && (
         <AddFoodItemModal
@@ -384,6 +275,14 @@ export function InventoryDashboard({ items: initial, userName, userImage, unread
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onSuccess={handleItemUpdated}
+        />
+      )}
+      {detailItem && (
+        <FoodItemDetailModal
+          item={detailItem}
+          onClose={() => setDetailItem(null)}
+          onEdit={(item) => { setDetailItem(null); setEditingItem(item); }}
+          onDelete={(id) => { setDetailItem(null); handleDelete(id); }}
         />
       )}
     </>

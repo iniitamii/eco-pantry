@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { AnalyticsClient } from "@/components/AnalyticsClient";
 
-export const metadata: Metadata = { title: "EcoPantry — My Impact" };
+export const metadata: Metadata = { title: "EcoPantry — Analytics" };
 
 export default async function AnalyticsPage() {
   const session = await auth();
@@ -50,8 +50,6 @@ export default async function AnalyticsPage() {
       stats={{ totalAdded, totalUsed, totalDonated, totalExpired, totalClaimed }}
       recentLogs={JSON.parse(JSON.stringify(recentLogs))}
       categoryBreakdown={categoryBreakdown}
-      userName={session.user.name ?? "Friend"}
-      userImage={session.user.image ?? null}
     />
   );
 }

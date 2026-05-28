@@ -1,198 +1,257 @@
-"use client";
+import Link from "next/link";
+import type { Metadata } from "next";
 
-import { useState, useTransition } from "react";
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { registerUser } from "@/app/actions/register";
+export const metadata: Metadata = {
+  title: "EcoPantry — Reduce Waste. Eat Smart. Live Sustainably.",
+  description:
+    "EcoPantry helps you track pantry items, plan meals around expiring food, donate surplus to your community, and measure your environmental impact.",
+};
 
-type Mode = "login" | "register";
-
-export default function LoginPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [mode, setMode]           = useState<Mode>("login");
-  const [error, setError]         = useState<string | null>(null);
-  const [success, setSuccess]     = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (session) router.push("/dashboard");
-  }, [session, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-[#F5F0E8] flex items-center justify-center">
-        <p className="text-stone-400 text-sm">Loading…</p>
-      </div>
-    );
-  }
-
-  // ── Credentials sign in ──
-  async function handleCredentialsLogin(formData: FormData) {
-    setError(null);
-    const email    = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    if (result?.error) {
-      setError(result.error === "CredentialsSignin"
-        ? "Incorrect email or password"
-        : result.error
-      );
-    } else {
-      router.push("/dashboard");
-    }
-  }
-
-  // ── Register ──
-  function handleRegister(formData: FormData) {
-    setError(null);
-    setSuccess(null);
-    startTransition(async () => {
-      const result = await registerUser(formData);
-      if (result.success) {
-        setSuccess("Account created! Signing you in…");
-        // Auto sign in after register
-        const email    = formData.get("email") as string;
-        const password = formData.get("password") as string;
-        await signIn("credentials", { email, password, callbackUrl: "/dashboard" });
-      } else {
-        setError(typeof result.errors === "string"
-          ? result.errors
-          : Object.values(result.errors as Record<string, string[]>).flat()[0]
-        );
-      }
-    });
-  }
-
+export default function LandingPage() {
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
+        .landing * { box-sizing: border-box; margin: 0; padding: 0; }
+        .landing { font-family: 'DM Sans', sans-serif; background: #F5F0E8; color: #292524; line-height: 1.6; }
+      `}</style>
 
-      <div className="min-h-screen bg-[#F5F0E8] flex items-center justify-center px-4 py-10" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <div className="w-full max-w-sm">
+      <div className="landing">
 
-          {/* Brand */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-700 rounded-2xl mb-4 shadow-lg">
-              <span className="text-3xl">🌿</span>
+        {/* ── Navbar ── */}
+        <nav style={{
+          position: "sticky", top: 0, zIndex: 50,
+          background: "rgba(245,240,232,0.85)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid #E7E5E4",
+        }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'Lora', serif", fontSize: 18, fontWeight: 600 }}>
+              🌿 EcoPantry
             </div>
-            <h1 style={{ fontFamily: "'Lora', serif" }} className="text-3xl text-stone-800 font-semibold">EcoPantry</h1>
-            <p className="text-stone-500 text-sm mt-1">Reduce waste. Eat smart. Live sustainably.</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+              <a href="#features" style={{ fontSize: 14, color: "#57534E", fontWeight: 500 }}>Features</a>
+              <a href="#how-it-works" style={{ fontSize: 14, color: "#57534E", fontWeight: 500 }}>How it works</a>
+              <a href="#problem" style={{ fontSize: 14, color: "#57534E", fontWeight: 500 }}>Why it matters</a>
+            </div>
+            <Link href="/login" style={{
+              background: "#2D6A4F", color: "#fff", fontSize: 13, fontWeight: 600,
+              padding: "8px 20px", borderRadius: 10,
+            }}>
+              Get started free →
+            </Link>
+          </div>
+        </nav>
+
+        {/* ── Hero ── */}
+        <section style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px 60px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+          <div>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "#D8F3DC", color: "#2D6A4F",
+              fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 100,
+              marginBottom: 24, letterSpacing: "0.02em",
+            }}>
+              🌱 Sustainable food management
+            </div>
+            <h1 style={{ fontFamily: "'Lora', serif", fontSize: 52, lineHeight: 1.15, marginBottom: 20 }}>
+              Stop wasting food.<br />
+              <span style={{ color: "#2D6A4F" }}>Start living smarter.</span>
+            </h1>
+            <p style={{ fontSize: 17, color: "#57534E", lineHeight: 1.7, marginBottom: 32, maxWidth: 460 }}>
+              EcoPantry helps you track what's in your pantry, plan meals around expiring items, donate surplus food, and measure your environmental impact — all in one place.
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <Link href="/login" style={{
+                background: "#2D6A4F", color: "#fff", fontSize: 14, fontWeight: 600,
+                padding: "12px 28px", borderRadius: 12, display: "inline-flex", alignItems: "center", gap: 8,
+              }}>
+                Start for free →
+              </Link>
+              <a href="#how-it-works" style={{
+                background: "#fff", color: "#57534E", fontSize: 14, fontWeight: 600,
+                padding: "12px 28px", borderRadius: 12, border: "1px solid #E7E5E4",
+              }}>
+                See how it works
+              </a>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 24, fontSize: 13, color: "#A8A29E" }}>
+              <span style={{ color: "#2D6A4F", fontWeight: 600 }}>✓ Free to use</span> · No credit card required · Built for sustainability
+            </div>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-sm p-8">
-
-            {/* Mode toggle */}
-            <div className="flex bg-stone-100 rounded-xl p-1 mb-6">
-              {(["login", "register"] as Mode[]).map(m => (
-                <button
-                  key={m}
-                  onClick={() => { setMode(m); setError(null); setSuccess(null); }}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all capitalize ${
-                    mode === m ? "bg-white text-stone-800 shadow-sm" : "text-stone-500"
-                  }`}
-                >
-                  {m === "login" ? "Sign In" : "Register"}
-                </button>
+          {/* Mockup */}
+          <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #E7E5E4", padding: 24, boxShadow: "0 4px 40px rgba(0,0,0,0.06)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div>
+                <div style={{ fontFamily: "'Lora', serif", fontSize: 18 }}>Good morning, Tami.</div>
+                <div style={{ fontSize: 12, color: "#A8A29E", marginTop: 2 }}>3 items expiring this week — use them up!</div>
+              </div>
+              <span style={{ fontSize: 20 }}>🔔</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
+              {[
+                { label: "Total", value: "12", bg: "#F5F0E8", color: "#292524" },
+                { label: "Expiring", value: "3", bg: "#FFF7ED", color: "#C2410C" },
+                { label: "Expired", value: "1", bg: "#FFF1F2", color: "#E11D48" },
+                { label: "Fresh", value: "8", bg: "#F0FDF4", color: "#2D6A4F" },
+              ].map(({ label, value, bg, color }) => (
+                <div key={label} style={{ padding: 14, borderRadius: 14, background: bg, border: "1px solid #E7E5E4" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "#A8A29E", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</div>
+                  <div style={{ fontFamily: "'Lora', serif", fontSize: 26, fontWeight: 700, color }}>{value}</div>
+                </div>
               ))}
             </div>
-
-            {/* Error / Success */}
-            {error && (
-              <p className="mb-4 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3">{error}</p>
-            )}
-            {success && (
-              <p className="mb-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">{success}</p>
-            )}
-
-            {/* Credentials Form */}
-            <form action={mode === "login" ? handleCredentialsLogin : handleRegister} className="space-y-3 mb-5">
-              {mode === "register" && (
-                <div>
-                  <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">Name</label>
-                  <input
-                    name="name" type="text" required placeholder="Your name"
-                    className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 placeholder:text-stone-300"
-                  />
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { emoji: "🥛", name: "Organic Milk", meta: "1 L · Fridge", badge: "⚠ 1d left", badgeBg: "#FFF7ED", badgeColor: "#C2410C", badgeBorder: "#FED7AA" },
+                { emoji: "🥦", name: "Broccoli", meta: "2 pcs · Fridge", badge: "3d left", badgeBg: "#FEFCE8", badgeColor: "#A16207", badgeBorder: "#FEF08A" },
+                { emoji: "🍞", name: "Sourdough Bread", meta: "1 loaf · Pantry", badge: "🤝 Listed", badgeBg: "#F5F3FF", badgeColor: "#7C3AED", badgeBorder: "#DDD6FE" },
+                { emoji: "🌾", name: "Brown Rice", meta: "2 kg · Cupboard", badge: "Fresh", badgeBg: "#F0FDF4", badgeColor: "#2D6A4F", badgeBorder: "#D8F3DC" },
+              ].map(({ emoji, name, meta, badge, badgeBg, badgeColor, badgeBorder }) => (
+                <div key={name} style={{ background: "#F5F5F4", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #E7E5E4" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>{emoji}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{name}</div>
+                      <div style={{ fontSize: 11, color: "#A8A29E" }}>{meta}</div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 100, background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}>
+                    {badge}
+                  </span>
                 </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">Email</label>
-                <input
-                  name="email" type="email" required placeholder="you@example.com"
-                  className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 placeholder:text-stone-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">Password</label>
-                <input
-                  name="password" type="password" required placeholder="••••••••"
-                  minLength={8}
-                  className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 placeholder:text-stone-300"
-                />
-                {mode === "register" && (
-                  <p className="text-xs text-stone-400 mt-1">Minimum 8 characters</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition-colors flex items-center justify-center gap-2 mt-1"
-              >
-                {isPending ? (
-                  <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Processing…</>
-                ) : mode === "login" ? "Sign In" : "Create Account"}
-              </button>
-            </form>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex-1 h-px bg-stone-100" />
-              <span className="text-xs text-stone-400 font-medium">or continue with</span>
-              <div className="flex-1 h-px bg-stone-100" />
-            </div>
-
-            {/* OAuth Buttons */}
-            <div className="space-y-2">
-              {/* Google */}
-              <button
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-stone-50 text-stone-700 font-semibold rounded-xl py-2.5 text-sm transition-colors border border-stone-200"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                Continue with Google
-              </button>
-
-              {/* GitHub */}
-              <button
-                onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-                className="w-full flex items-center justify-center gap-3 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-                Continue with GitHub
-              </button>
+              ))}
             </div>
           </div>
+        </section>
 
-          <p className="text-center text-xs text-stone-400 mt-6">By signing in, you agree to reduce food waste 🌱</p>
+        {/* ── Stats Bar ── */}
+        <div style={{ background: "#292524", padding: "32px 24px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24, textAlign: "center" }}>
+            {[
+              { value: "1/3", label: "of all food produced globally is wasted every year" },
+              { value: "$1T+", label: "in economic losses from food waste annually" },
+              { value: "8%", label: "of global greenhouse gas emissions from food waste" },
+              { value: "Free", label: "EcoPantry is completely free to use — always" },
+            ].map(({ value, label }) => (
+              <div key={value}>
+                <div style={{ fontFamily: "'Lora', serif", fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{value}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* ── Problem ── */}
+        <section id="problem" style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#2D6A4F", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>The problem</div>
+          <h2 style={{ fontFamily: "'Lora', serif", fontSize: 38, marginBottom: 16, lineHeight: 1.25 }}>Food waste starts at home</h2>
+          <p style={{ fontSize: 16, color: "#57534E", maxWidth: 520, lineHeight: 1.7, marginBottom: 48 }}>
+            Most household food waste happens because we lose track of what we have, forget expiry dates, or overbuy. EcoPantry fixes this.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
+            {[
+              { stat: "$1,500", title: "Per household, per year", desc: "The average family throws away up to $1,500 worth of food annually — money that could stay in your pocket with better pantry management." },
+              { stat: "40%", title: "Of food never gets eaten", desc: "Nearly 40% of food in developed countries is discarded at the consumer level — most of it perfectly edible and simply forgotten." },
+              { stat: "10min", title: "To set up your pantry", desc: "It takes less than 10 minutes to add your items to EcoPantry. After that, smart alerts and AI meal planning do the work for you." },
+            ].map(({ stat, title, desc }) => (
+              <div key={stat} style={{ background: "#fff", borderRadius: 20, padding: 28, border: "1px solid #E7E5E4" }}>
+                <div style={{ fontFamily: "'Lora', serif", fontSize: 28, fontWeight: 700, color: "#C2410C", marginBottom: 4 }}>{stat}</div>
+                <h3 style={{ fontFamily: "'Lora', serif", fontSize: 18, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: "#57534E", lineHeight: 1.65 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Features ── */}
+        <section id="features" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px 80px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#2D6A4F", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>Features</div>
+          <h2 style={{ fontFamily: "'Lora', serif", fontSize: 38, marginBottom: 16, lineHeight: 1.25 }}>Everything your pantry needs</h2>
+          <p style={{ fontSize: 16, color: "#57534E", maxWidth: 520, lineHeight: 1.7, marginBottom: 48 }}>
+            From expiry tracking to AI meal planning, EcoPantry covers the full journey from buying food to reducing waste.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+            {[
+              { icon: "📦", title: "Smart inventory tracking", desc: "Add items with expiry dates, quantities, categories and storage locations. Get color-coded alerts before things go bad." },
+              { icon: "✨", title: "AI meal planner", desc: "Gemini AI analyses your pantry and suggests meals that use up the items closest to expiry — reducing waste while inspiring cooking." },
+              { icon: "🤝", title: "Community donations", desc: "List surplus food for donation and let neighbours claim it before it expires. Build a local food-sharing community." },
+              { icon: "📊", title: "Impact analytics", desc: "Track your save rate, waste rate, and top food categories over time. See your real environmental contribution." },
+              { icon: "🔔", title: "Smart notifications", desc: "Configurable expiry alerts — set your own threshold from 1 to 14 days. Get notified when donations are claimed or confirmed." },
+              { icon: "⚙️", title: "Personalised settings", desc: "Control your notification preferences, donation visibility, and alert thresholds. EcoPantry works the way you want it to." },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} style={{ background: "#fff", borderRadius: 20, padding: 28, border: "1px solid #E7E5E4" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#D8F3DC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 16 }}>
+                  {icon}
+                </div>
+                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: 13, color: "#57534E", lineHeight: 1.65 }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── How it works ── */}
+        <div id="how-it-works" style={{ background: "#292524", padding: "80px 24px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#D8F3DC", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>How it works</div>
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: 38, color: "#fff", marginBottom: 16, lineHeight: 1.25 }}>Three steps to zero waste</h2>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", maxWidth: 520, lineHeight: 1.7, marginBottom: 48 }}>
+              EcoPantry is designed to be simple enough to use daily, and smart enough to make a real difference.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 32 }}>
+              {[
+                { num: "01", icon: "📝", title: "Add your items", desc: "Manually add food items with their expiry dates, quantities, and storage locations. Takes seconds per item." },
+                { num: "02", icon: "🍳", title: "Get smart suggestions", desc: "Our AI chef reviews your pantry and suggests meals that use up expiring items first — so nothing goes to waste." },
+                { num: "03", icon: "🌍", title: "Track your impact", desc: "Watch your waste rate drop and your save rate climb. Share surplus food with neighbours and see your community contribution grow." },
+              ].map(({ num, icon, title, desc }) => (
+                <div key={num} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: 28, border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <div style={{ fontFamily: "'Lora', serif", fontSize: 14, fontWeight: 600, color: "#D8F3DC", marginBottom: 16, width: 32, height: 32, borderRadius: "50%", background: "rgba(64,145,108,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {num}
+                  </div>
+                  <div style={{ fontSize: 28, marginBottom: 12 }}>{icon}</div>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, color: "#fff", marginBottom: 8 }}>{title}</h3>
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.65 }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── CTA ── */}
+        <div style={{ background: "linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)", padding: "80px 24px", textAlign: "center" }}>
+          <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            <h2 style={{ fontFamily: "'Lora', serif", fontSize: 40, color: "#fff", marginBottom: 16, lineHeight: 1.25 }}>
+              Ready to reduce your food waste?
+            </h2>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", marginBottom: 32, lineHeight: 1.7 }}>
+              Join EcoPantry today and start making a difference — for your wallet, your community, and the planet.
+            </p>
+            <Link href="/login" style={{
+              background: "#fff", color: "#2D6A4F", fontSize: 15, fontWeight: 700,
+              padding: "14px 36px", borderRadius: 14, display: "inline-block",
+            }}>
+              Create your free account →
+            </Link>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 16 }}>
+              Free forever · No credit card · Takes 2 minutes
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <footer style={{ background: "#292524", padding: "40px 24px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontFamily: "'Lora', serif", fontSize: 16, color: "#fff", display: "flex", alignItems: "center", gap: 8 }}>
+              🌿 EcoPantry
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+              Built with 💚 to reduce food waste · © 2026 EcoPantry
+            </div>
+          </div>
+        </footer>
+
       </div>
     </>
   );

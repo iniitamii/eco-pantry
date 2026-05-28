@@ -2,11 +2,12 @@ import { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 interface CreateNotificationParams {
-  userId: string;
-  type:   NotificationType;
-  title:  string;
-  body:   string;
-  refId?: string;
+  userId:      string;
+  type:        NotificationType;
+  title:       string;
+  body:        string;
+  foodItemId?: string;
+  listingId?:  string;
 }
 
 export async function createNotification(params: CreateNotificationParams): Promise<void> {
@@ -17,11 +18,11 @@ export async function createNotification(params: CreateNotificationParams): Prom
         type:   params.type,
         title:  params.title,
         body:   params.body,
-        refId:  params.refId ?? null,
+        ...(params.foodItemId && { foodItemId: params.foodItemId }),
+        ...(params.listingId  && { listingId:  params.listingId  }),
       },
     });
   } catch (error) {
-    // Non-critical — never break the main action
     console.error("[createNotification]", error);
   }
 }

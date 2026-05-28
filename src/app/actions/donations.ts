@@ -41,7 +41,7 @@ export async function createDonation(
       }),
       prisma.foodItem.update({
         where: { id: foodItemId },
-        data:  { isDonated: true, status: "DONATED" },
+        data:  { isDonated: true, status: "PLANNED" },
       }),
     ]);
 
@@ -81,7 +81,10 @@ export async function claimDonation(
   try {
     const listing = await prisma.donationListing.findUnique({
       where:   { id: listingId },
-      include: { claims: { where: { claimerId: userId } } },
+      include: {
+        claims:   { where: { claimerId: userId } },
+        foodItem: true,
+      },
     });
 
     if (!listing)                  return { success: false, error: "Listing not found" };
@@ -96,6 +99,15 @@ export async function claimDonation(
         message:   message ?? null,
         status:    "PENDING",
       },
+    });
+
+    // Notify the donor that someone requested their item
+    await createNotification({
+      userId:    listing.userId,
+      type:      "DONATION_CLAIMED",
+      title:     "Someone wants your donation 🤝",
+      body:      `A new request came in for ${listing.foodItem.name}. Go to My Donations to confirm.`,
+      listingId: listingId,
     });
 
     revalidatePath("/donations");
@@ -138,7 +150,7 @@ export async function confirmClaim(claimId: string): Promise<ConfirmClaimResult>
       }),
       prisma.donationListing.update({
         where: { id: claim.listingId },
-        data:  { isAvailable: false, claimedAt: new Date() },
+        data:  { isAvailable: false },
       }),
     ]);
 
@@ -152,19 +164,19 @@ export async function confirmClaim(claimId: string): Promise<ConfirmClaimResult>
     });
 
     await createNotification({
-      userId: claim.claimerId,
-      type:   "CLAIM_CONFIRMED",
-      title:  "Your request was confirmed! 🎉",
-      body:   `${claim.listing.foodItem.name} is yours. Check the pickup details.`,
-      refId:  claim.listing.id,
+      userId:    claim.claimerId,
+      type:      "CLAIM_CONFIRMED",
+      title:     "Your request was confirmed! 🎉",
+      body:      `${claim.listing.foodItem.name} is yours. Check the pickup details.`,
+      listingId: claim.listing.id,
     });
 
     await createNotification({
-      userId: claim.listing.userId,
-      type:   "DONATION_CLAIMED",
-      title:  "Your donation was claimed 🤝",
-      body:   `Someone picked up your ${claim.listing.foodItem.name}.`,
-      refId:  claim.listing.id,
+      userId:    claim.listing.userId,
+      type:      "DONATION_CLAIMED",
+      title:     "Your donation was claimed 🤝",
+      body:      `Someone picked up your ${claim.listing.foodItem.name}.`,
+      listingId: claim.listing.id,
     });
 
     revalidatePath("/donations");

@@ -20,13 +20,12 @@ export default async function SettingsPage() {
     notifyExpiryAlerts:    true,
     notifyDonationClaimed: true,
     notifyClaimConfirmed:  true,
+    expiryAlertDays:       3,
   };
 
   return (
     <SettingsClient
       settings={settings ?? defaults}
-      userName={session.user.name ?? "Friend"}
-      userImage={session.user.image ?? null}
     />
   );
 }

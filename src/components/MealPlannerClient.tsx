@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Navbar } from "./Navbar";
 import {
   generateMealPlan,
   getSavedMealPlans,
   markMealCooked,
+  deleteMealPlan,
   type MealPlan,
   type MealSuggestion,
 } from "@/app/actions/meal-plan";
@@ -18,7 +19,7 @@ export function MealPlannerClient() {
   const [view, setView]               = useState<"generate" | "history">("generate");
   const [error, setError]             = useState<string | null>(null);
   const [isPending, startTransition]  = useTransition();
-  const router = useRouter();
+  const [deletingId, setDeletingId]   = useState<string | null>(null);
 
   // Load saved plans on mount
   useEffect(() => {
@@ -46,6 +47,16 @@ export function MealPlannerClient() {
     });
   }
 
+  async function handleDelete(planId: string) {
+    setDeletingId(planId);
+    const result = await deleteMealPlan(planId);
+    if (result.success) {
+      setSavedPlans(prev => prev.filter(p => p.id !== planId));
+      if (activePlan?.id === planId) setActivePlan(null);
+    }
+    setDeletingId(null);
+  }
+
   async function handleMarkCooked(suggestionId: string) {
     const result = await markMealCooked(suggestionId);
     if (result.success) {
@@ -70,48 +81,35 @@ export function MealPlannerClient() {
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌿</span>
-              <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Tab toggle */}
-              <div className="flex bg-stone-100 rounded-lg p-0.5 text-sm">
-                <button
-                  onClick={() => setView("generate")}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                    view === "generate"
-                      ? "bg-white text-stone-800 shadow-sm"
-                      : "text-stone-500 hover:text-stone-700"
-                  }`}
-                >
-                  ✨ Planner
-                </button>
-                <button
-                  onClick={() => setView("history")}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                    view === "history"
-                      ? "bg-white text-stone-800 shadow-sm"
-                      : "text-stone-500 hover:text-stone-700"
-                  }`}
-                >
-                  🕐 History {savedPlans.length > 0 && `(${savedPlans.length})`}
-                </button>
-              </div>
+      <Navbar />
+
+        <div className="max-w-5xl mx-auto px-4 py-8">
+
+          {/* ── View Toggle ── */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex bg-white rounded-full p-1.5 border border-stone-200 shadow-sm">
               <button
-                onClick={() => router.push("/dashboard")}
-                className="text-sm text-stone-500 hover:text-stone-700 transition-colors"
+                onClick={() => setView("generate")}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
+                  view === "generate"
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100"
+                    : "text-stone-500 hover:text-stone-700 border border-transparent"
+                }`}
               >
-                ← Back
+                ✨ Generate Plan
+              </button>
+              <button
+                onClick={() => setView("history")}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
+                  view === "history"
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100"
+                    : "text-stone-500 hover:text-stone-700 border border-transparent"
+                }`}
+              >
+                🕐 History
               </button>
             </div>
           </div>
-        </nav>
-
-        <div className="max-w-5xl mx-auto px-4 py-8">
 
           {/* ── Generate View ── */}
           {view === "generate" && (
@@ -182,12 +180,21 @@ export function MealPlannerClient() {
                             weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
                           })}
                         </span>
-                        <button
-                          onClick={() => { setActivePlan(plan); setView("generate"); }}
-                          className="text-xs text-emerald-700 font-medium hover:text-emerald-900"
-                        >
-                          View full plan →
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => { setActivePlan(plan); setView("generate"); }}
+                            className="text-xs text-emerald-700 font-medium hover:text-emerald-900"
+                          >
+                            View full plan →
+                          </button>
+                          <button
+                            onClick={() => handleDelete(plan.id)}
+                            disabled={deletingId === plan.id}
+                            className="text-xs text-rose-400 hover:text-rose-600 font-medium transition-colors disabled:opacity-40"
+                          >
+                            {deletingId === plan.id ? "Deleting…" : "Delete"}
+                          </button>
+                        </div>
                       </div>
                       {/* Meal chips */}
                       <div className="px-5 py-4 flex flex-wrap gap-2">

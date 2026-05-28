@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { Navbar } from "./Navbar";
 import { saveSettings } from "@/app/actions/settings";
 
 interface Settings {
@@ -10,12 +9,11 @@ interface Settings {
   notifyExpiryAlerts:    boolean;
   notifyDonationClaimed: boolean;
   notifyClaimConfirmed:  boolean;
+  expiryAlertDays:       number;
 }
 
 interface Props {
   settings:  Settings;
-  userName:  string;
-  userImage: string | null;
 }
 
 function Toggle({
@@ -49,14 +47,13 @@ function Toggle({
   );
 }
 
-export function SettingsClient({ settings: initial, userName, userImage }: Props) {
+export function SettingsClient({ settings: initial }: Props) {
   const [settings, setSettings] = useState<Settings>(initial);
   const [saved, setSaved]       = useState(false);
   const [error, setError]       = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
-  function update(key: keyof Settings, value: boolean) {
+  function update(key: keyof Settings, value: boolean | number) {
     setSettings(prev => ({ ...prev, [key]: value }));
     setSaved(false);
   }
@@ -81,27 +78,7 @@ export function SettingsClient({ settings: initial, userName, userImage }: Props
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌿</span>
-              <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <button onClick={() => router.push("/dashboard")} className="text-xs text-stone-500 hover:text-stone-700 transition-colors">
-                ← Pantry
-              </button>
-              <div className="flex items-center gap-2">
-                {userImage && <img src={userImage} alt={userName} className="w-7 h-7 rounded-full object-cover" />}
-                <span className="text-sm text-stone-600">{userName}</span>
-              </div>
-              <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
-                Sign out
-              </button>
-            </div>
-          </div>
-        </nav>
+      <Navbar />
 
         <div className="max-w-2xl mx-auto px-4 py-8">
 
@@ -136,12 +113,34 @@ export function SettingsClient({ settings: initial, userName, userImage }: Props
               Notifications
             </h2>
             <div className="divide-y divide-stone-50">
-              <Toggle
+            <Toggle
                 label="Expiry alerts"
-                description="Notify me when items are expiring within 3 days."
+                description={`Notify me when items are expiring within ${settings.expiryAlertDays} day${settings.expiryAlertDays > 1 ? "s" : ""}.`}
                 checked={settings.notifyExpiryAlerts}
                 onChange={v => update("notifyExpiryAlerts", v)}
               />
+
+              {settings.notifyExpiryAlerts && (
+                <div className="flex items-center justify-between gap-4 py-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-stone-700">Alert threshold</p>
+                    <p className="text-xs text-stone-400 mt-0.5">How many days before expiry to notify you.</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => update("expiryAlertDays", Math.max(1, settings.expiryAlertDays - 1))}
+                      className="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold transition-colors"
+                    >−</button>
+                    <span className="w-6 text-center text-sm font-semibold text-stone-700">
+                      {settings.expiryAlertDays}
+                    </span>
+                    <button
+                      onClick={() => update("expiryAlertDays", Math.min(14, settings.expiryAlertDays + 1))}
+                      className="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold transition-colors"
+                    >+</button>
+                  </div>
+                </div>
+              )}
               <Toggle
                 label="Donation claimed"
                 description="Notify me when someone confirms my donation request."

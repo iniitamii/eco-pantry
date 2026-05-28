@@ -78,12 +78,23 @@ export async function deleteFoodItem(itemId: string): Promise<DeleteFoodItemResu
     const item = await prisma.foodItem.findUnique({ where: { id: itemId, userId } });
     if (!item) return { success: false, error: "Item not found" };
 
+    // Block deletion of PLANNED items — must remove donation listing first
+    if (item.status === "PLANNED") {
+      return { success: false, error: "Remove the donation listing before deleting this item." };
+    }
+
     await prisma.foodItem.delete({ where: { id: itemId, userId } });
+
+    // Log correct action based on actual item status
+    const actionType =
+      item.status === "EXPIRED" ? "ITEM_EXPIRED" :
+      item.status === "DONATED" ? "ITEM_DONATED" :
+      "ITEM_USED";
 
     await logActivity({
       userId,
       foodItemId: itemId,
-      actionType: "ITEM_USED",
+      actionType,
       quantity:   item.quantity,
       unit:       item.unit,
       category:   item.category,
@@ -122,6 +133,19 @@ export async function editFoodItem(
 
   try {
     const existing = await prisma.foodItem.findUnique({ where: { id: itemId, userId } });
+    if (!existing) return { success: false, errors: "Item not found" };
+
+    // Block edits on donated items entirely
+    if (existing.status === "DONATED") {
+      return { success: false, errors: "Donated items cannot be edited." };
+    }
+
+    // Prevent bypassing donation flow via status field
+    if (existing.status === "PLANNED") {
+      parsed.data.status = "PLANNED";
+    } else if (parsed.data.status === "PLANNED" || parsed.data.status === "DONATED") {
+      parsed.data.status = existing.status;
+    }
 
     const item = await prisma.foodItem.update({
       where: { id: itemId, userId },
@@ -167,18 +191,23 @@ export async function updateFoodItemStatus(
       },
     });
 
-    await logActivity({
-      userId,
-      foodItemId: item.id,
-      actionType: status === "USED"    ? "ITEM_USED"
-                : status === "EXPIRED" ? "ITEM_EXPIRED"
-                : status === "DONATED" ? "ITEM_DONATED"
-                : "ITEM_ADDED",
-      quantity:  item.quantity,
-      unit:      item.unit,
-      category:  item.category,
-    });
+    // Only log meaningful status transitions
+    const actionType =
+      status === "USED"    ? "ITEM_USED"    :
+      status === "EXPIRED" ? "ITEM_EXPIRED" :
+      status === "DONATED" ? "ITEM_DONATED" :
+      null;
 
+    if (actionType) {
+      await logActivity({
+        userId,
+        foodItemId: item.id,
+        actionType,
+      quantity:  item.quantity,
+        unit:      item.unit,
+        category:  item.category,
+      });
+    }
     revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import type { FoodItem, FoodCategory } from "@prisma/client";
-import { addFoodItem } from "../app/actions/food-items";
+import { addFoodItem } from "@/app/actions/food-items";
 
 interface Props {
   onClose: () => void;

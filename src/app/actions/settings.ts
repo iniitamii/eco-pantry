@@ -10,6 +10,7 @@ const SettingsSchema = z.object({
   notifyExpiryAlerts:    z.boolean().default(true),
   notifyDonationClaimed: z.boolean().default(true),
   notifyClaimConfirmed:  z.boolean().default(true),
+  expiryAlertDays:       z.number().int().min(1).max(14).default(3),
 });
 
 export type SaveSettingsResult =
@@ -56,5 +57,6 @@ export async function getSettings() {
     notifyExpiryAlerts:    true,
     notifyDonationClaimed: true,
     notifyClaimConfirmed:  true,
+    expiryAlertDays:       3,
   };
 }

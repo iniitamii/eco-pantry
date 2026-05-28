@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createDonation, removeDonation, confirmClaim } from "@/app/actions/donations";
+import { Navbar } from "./Navbar";
 import type { FoodItem, FoodCategory, DonationListing, DonationClaim } from "@prisma/client";
 
 interface Claimer {
@@ -15,7 +16,7 @@ interface ClaimWithClaimer extends DonationClaim {
   claimer: Claimer;
 }
 
-interface ListingWithItem extends DonationListing {
+interface ListingWithItem extends Omit<DonationListing, 'claimedAt'> {
   foodItem: FoodItem;
   claims:   ClaimWithClaimer[];
 }
@@ -47,7 +48,6 @@ export function MyDonationsClient({ listings: initial, availableItems }: Props) 
   const [removingId, setRemovingId]     = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isSubmitting, startTransition] = useTransition();
-  const router = useRouter();
 
   function handleCreate() {
     if (!selectedItem) return;
@@ -70,7 +70,6 @@ export function MyDonationsClient({ listings: initial, availableItems }: Props) 
           pickupLocation: pickupLocation || null,
           pickupNotes:    pickupNotes    || null,
           isAvailable:    true,
-          claimedAt:      null,
           createdAt:      new Date().toISOString() as any,
           updatedAt:      new Date().toISOString() as any,
           foodItem:       item,
@@ -114,7 +113,6 @@ export function MyDonationsClient({ listings: initial, availableItems }: Props) 
           return {
             ...l,
             isAvailable: false,
-            claimedAt:   new Date().toISOString() as any,
             claims: l.claims.map(c => ({
               ...c,
               status: c.id === claimId ? "CONFIRMED" : "CANCELLED",
@@ -132,24 +130,7 @@ export function MyDonationsClient({ listings: initial, availableItems }: Props) 
 
       <div className="min-h-screen bg-[#F5F0E8]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur border-b border-stone-100 sticky top-0 z-40">
-          <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🌿</span>
-              <span style={{ fontFamily: "'Lora', serif" }} className="font-semibold text-stone-800">EcoPantry</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.push("/donations")} className="text-xs text-emerald-700 font-medium hover:text-emerald-900 transition-colors">
-                Community
-              </button>
-              <button onClick={() => router.push("/dashboard")} className="text-xs text-stone-500 hover:text-stone-700 transition-colors">
-                ← Pantry
-              </button>
-            </div>
-          </div>
-        </nav>
-
+      <Navbar />
         <div className="max-w-3xl mx-auto px-4 py-8">
 
           {/* Header */}

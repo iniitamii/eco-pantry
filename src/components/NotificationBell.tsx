@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { Notification } from "@prisma/client";
 
 interface Props {
@@ -14,11 +15,21 @@ const TYPE_ICONS: Record<string, string> = {
   CLAIM_CONFIRMED:  "🎉",
 };
 
+function getNotificationHref(n: Notification): string {
+  switch (n.type) {
+    case "DONATION_CLAIMED": return "/donations/mine";
+    case "CLAIM_CONFIRMED":  return "/donations/mine";
+    case "EXPIRY_ALERT":     return "/dashboard";
+    default:                 return "/dashboard";
+  }
+}
+
 export function NotificationBell({ unreadCount: initialCount, notifications: initial }: Props) {
-  const [open, setOpen]               = useState(false);
-  const [count, setCount]             = useState(initialCount);
+  const [open, setOpen]                   = useState(false);
+  const [count, setCount]                 = useState(initialCount);
   const [notifications, setNotifications] = useState<Notification[]>(initial);
-  const [, startTransition]           = useTransition();
+  const [, startTransition]               = useTransition();
+  const router                            = useRouter();
 
   function handleOpen() {
     setOpen(prev => !prev);
@@ -29,6 +40,11 @@ export function NotificationBell({ unreadCount: initialCount, notifications: ini
         setCount(0);
       });
     }
+  }
+
+  function handleNotificationClick(n: Notification) {
+    setOpen(false);
+    router.push(getNotificationHref(n));
   }
 
   return (
@@ -55,6 +71,7 @@ export function NotificationBell({ unreadCount: initialCount, notifications: ini
             <div className="px-4 py-3 border-b border-stone-50">
               <p className="text-sm font-semibold text-stone-700">Notifications</p>
             </div>
+
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-stone-400">
                 <p className="text-2xl mb-2">🔔</p>
@@ -63,16 +80,25 @@ export function NotificationBell({ unreadCount: initialCount, notifications: ini
             ) : (
               <ul className="max-h-80 overflow-y-auto divide-y divide-stone-50">
                 {notifications.map(n => (
-                  <li key={n.id} className={`px-4 py-3 ${!n.isRead ? "bg-emerald-50/50" : ""}`}>
+                  <li
+                    key={n.id}
+                    onClick={() => handleNotificationClick(n)}
+                    className={`px-4 py-3 cursor-pointer hover:bg-stone-50 transition-colors ${
+                      !n.isRead ? "bg-emerald-50/50" : ""
+                    }`}
+                  >
                     <div className="flex items-start gap-2.5">
                       <span className="text-base shrink-0 mt-0.5">{TYPE_ICONS[n.type] ?? "🔔"}</span>
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-stone-700">{n.title}</p>
                         <p className="text-xs text-stone-400 mt-0.5">{n.body}</p>
                         <p className="text-[10px] text-stone-300 mt-1">
-                          {new Date(n.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          {new Date(n.createdAt).toLocaleDateString("en-US", {
+                            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                          })}
                         </p>
                       </div>
+                      <span className="shrink-0 text-[10px] text-stone-300 mt-0.5">→</span>
                     </div>
                   </li>
                 ))}

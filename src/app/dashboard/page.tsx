@@ -6,6 +6,7 @@ import { checkExpiryAndNotify } from "@/lib/expiry-check";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "EcoPantry — My Pantry" };
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
 
   const [items, notifications] = await Promise.all([
     prisma.foodItem.findMany({
-      where:   { userId, isDonated: false },
+      where:   { userId, status: { not: "DONATED" } },
       orderBy: { expiryDate: "asc" },
     }),
     prisma.notification.findMany({
