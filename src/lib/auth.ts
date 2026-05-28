@@ -37,6 +37,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
         if (!isValid) return null;
 
+        // If 2FA is enabled, signal it via a special flag
+        if (user.twoFactorEnabled) {
+          return {
+            id:             user.id,
+            email:          user.email,
+            name:           user.name,
+            image:          user.image,
+            twoFactorPending: true,
+          };
+        }
+
         return { id: user.id, email: user.email, name: user.name, image: user.image };
       },
     }),
@@ -45,15 +56,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
 
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) token.id = user.id;
+    async jwt({ token, user, trigger }) {
+      if (user) {
+        token.id = user.id;
+        token.twoFactorPending = (user as any).twoFactorPending ?? false;
+      }
+      if (trigger === "update") {
+        if ("twoFactorPending" in (token as any)) {
+          token.twoFactorPending = false;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) (session.user as any).id = token.id as string;
+      if (session.user) {
+        (session.user as any).id               = token.id as string;
+        (session.user as any).twoFactorPending = token.twoFactorPending as boolean;
+      }
       return session;
     },
   },
-
+  events: {
+      async signOut({ token }: any) {
+        if (token?.id) {
+          await prisma.user.update({
+            where: { id: token.id as string },
+            data:  { twoFactorVerifiedAt: null },
+          });
+        }
+      },
+    },
   pages: { signIn: "/login" },
 });

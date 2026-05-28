@@ -9,6 +9,9 @@ export const metadata: Metadata = { title: "EcoPantry — My Donations" };
 export default async function MyDonationsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if ((session.user as any).twoFactorPending) {
+    redirect(`/login/verify?userId=${(session.user as any).id}`);
+  }
   const userId = (session.user as any).id as string;
 
   const listings = await prisma.donationListing.findMany({
