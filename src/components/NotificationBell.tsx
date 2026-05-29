@@ -10,15 +10,17 @@ interface Props {
 }
 
 const TYPE_ICONS: Record<string, string> = {
-  EXPIRY_ALERT:     "⚠️",
-  DONATION_CLAIMED: "🤝",
-  CLAIM_CONFIRMED:  "🎉",
+  EXPIRY_ALERT:      "⚠️",
+  DONATION_CLAIMED:  "🤝",
+  CLAIM_CONFIRMED:   "🎉",
+  PICKUP_COMPLETED:  "✅",
 };
 
 function getNotificationHref(n: Notification): string {
   switch (n.type) {
     case "DONATION_CLAIMED": return "/donations/mine";
     case "CLAIM_CONFIRMED":  return "/donations/mine";
+    case "PICKUP_COMPLETED": return "/donations/mine";
     case "EXPIRY_ALERT":     return "/dashboard";
     default:                 return "/dashboard";
   }
