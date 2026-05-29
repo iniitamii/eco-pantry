@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { createDonation, removeDonation, confirmClaim } from "@/app/actions/donations";
+import { createDonation, removeDonation, confirmClaim, completeDonation } from "@/app/actions/donations";
 import { Navbar } from "./Navbar";
 import type { FoodItem, FoodCategory, DonationListing, DonationClaim } from "@prisma/client";
 
@@ -47,7 +47,28 @@ export function MyDonationsClient({ listings: initial, availableItems }: Props) 
   const [error, setError]               = useState<string | null>(null);
   const [removingId, setRemovingId]     = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [completingId, setCompletingId] = useState<string | null>(null);
   const [isSubmitting, startTransition] = useTransition();
+
+  function handleComplete(claimId: string, listingId: string) {
+      setCompletingId(claimId);
+      startTransition(async () => {
+        const result = await completeDonation(claimId);
+        if (result.success) {
+          setListings(prev => prev.map(l => {
+            if (l.id !== listingId) return l;
+            return {
+              ...l,
+              claims: l.claims.map(c => ({
+                ...c,
+                status: c.id === claimId ? "COMPLETED" : c.status,
+              })) as ClaimWithClaimer[],
+            };
+          }));
+        }
+        setCompletingId(null);
+      });
+    }
 
   function handleCreate() {
     if (!selectedItem) return;
@@ -305,16 +326,34 @@ export function MyDonationsClient({ listings: initial, availableItems }: Props) 
                     {/* Confirmed claim */}
                     {confirmedClaim && (
                       <div className="mt-3 pt-3 border-t border-stone-50">
-                        <p className="text-xs text-emerald-700 font-semibold mb-1">✅ Confirmed for</p>
-                        <div className="flex items-center gap-2">
-                          {confirmedClaim.claimer.image ? (
-                            <img src={confirmedClaim.claimer.image} alt="" className="w-5 h-5 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-xs text-emerald-700 font-bold">
-                              {confirmedClaim.claimer.name?.[0] ?? "?"}
-                            </div>
+                        <p className="text-xs text-emerald-700 font-semibold mb-2">
+                          {confirmedClaim.status === "COMPLETED" ? "✅ Completed for" : "✅ Confirmed for"}
+                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {confirmedClaim.claimer.image ? (
+                              <img src={confirmedClaim.claimer.image} alt="" className="w-5 h-5 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-xs text-emerald-700 font-bold">
+                                {confirmedClaim.claimer.name?.[0] ?? "?"}
+                              </div>
+                            )}
+                            <span className="text-xs text-stone-600 font-medium">{confirmedClaim.claimer.name ?? "Anonymous"}</span>
+                          </div>
+                          {confirmedClaim.status === "CONFIRMED" && (
+                            <button
+                              onClick={() => handleComplete(confirmedClaim.id, listing.id)}
+                              disabled={completingId === confirmedClaim.id}
+                              className="text-xs px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-60 text-emerald-700 font-semibold rounded-lg border border-emerald-100 transition-colors shrink-0"
+                            >
+                              {completingId === confirmedClaim.id ? "Completing…" : "Mark as picked up ✓"}
+                            </button>
                           )}
-                          <span className="text-xs text-stone-600 font-medium">{confirmedClaim.claimer.name ?? "Anonymous"}</span>
+                          {confirmedClaim.status === "COMPLETED" && (
+                            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-medium">
+                              Picked up 🎉
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}

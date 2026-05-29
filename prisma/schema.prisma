@@ -214,6 +214,7 @@ enum NotificationType {
   EXPIRY_ALERT
   DONATION_CLAIMED
   CLAIM_CONFIRMED
+  PICKUP_COMPLETED
 }
 
 model Notification {

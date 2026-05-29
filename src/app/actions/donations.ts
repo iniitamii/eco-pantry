@@ -225,3 +225,52 @@ export async function removeDonation(listingId: string): Promise<RemoveDonationR
     return { success: false, error: "Failed to remove listing." };
   }
 }
+
+// ─── Complete a donation (donor marks pickup as done) ─────────────────────────
+
+export type CompleteDonationResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export async function completeDonation(claimId: string): Promise<CompleteDonationResult> {
+  const session = await auth();
+  if (!session?.user) return { success: false, error: "Unauthorised" };
+  const userId = (session.user as any).id as string;
+
+  try {
+    const claim = await prisma.donationClaim.findUnique({
+      where:   { id: claimId },
+      include: { listing: { include: { foodItem: true } } },
+    });
+
+    if (!claim)                          return { success: false, error: "Claim not found" };
+    if (claim.listing.userId !== userId) return { success: false, error: "Unauthorised" };
+    if (claim.status !== "CONFIRMED")    return { success: false, error: "Claim must be confirmed first" };
+
+    await prisma.$transaction([
+      prisma.donationClaim.update({
+        where: { id: claimId },
+        data:  { status: "COMPLETED" },
+      }),
+      prisma.foodItem.update({
+        where: { id: claim.listing.foodItemId },
+        data:  { status: "DONATED" },
+      }),
+    ]);
+
+    await createNotification({
+      userId:    claim.claimerId,
+      type:      "PICKUP_COMPLETED",
+      title:     "Pickup completed! 🎉",
+      body:      `Your pickup of ${claim.listing.foodItem.name} has been marked as completed. Enjoy!`,
+      listingId: claim.listing.id,
+    });
+
+    revalidatePath("/donations/mine");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("[completeDonation]", error);
+    return { success: false, error: "Failed to complete donation." };
+  }
+}
